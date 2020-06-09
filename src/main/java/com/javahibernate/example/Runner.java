@@ -6,59 +6,49 @@ import java.util.UUID;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.cfg.AnnotationConfiguration;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
 import org.junit.Test;
 
 public class Runner {
 
     @Test
     public void crud() {
-        SessionFactory sessionFactory = new AnnotationConfiguration().configure().buildSessionFactory();
+        SessionFactory sessionFactory = getSessionFactory();
         Session session = sessionFactory.openSession();
 
-        create(session);
+        read(session);
+        Car car = create(session);
+
         read(session);
 
-        update(session);
+        update(session, car);
         read(session);
 
-//        delete(session);
-//        read(session);
+        delete(session, car);
+        read(session);
 
         session.close();
     }
 
-    private void delete(Session session) {
-        System.out.println("Deleting mondeo record...");
-        Car mondeo = (Car) session.get(Car.class, 22L);
-
-        session.beginTransaction();
-        session.delete(mondeo);
-        session.getTransaction().commit();
+    public SessionFactory getSessionFactory() {
+        Configuration configuration = new Configuration().configure();
+        StandardServiceRegistryBuilder registryBuilder=
+        new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
+        return configuration.buildSessionFactory(registryBuilder.build());
     }
 
-    private void update(Session session) {
-        System.out.println("Updating mustang price...");
-        Car mustang = (Car) session.get(Car.class, 23L);
-        mustang.setPrice("£35,250.00"+ UUID.randomUUID());
+    private Car create(Session session) {
+        System.out.println("Creating car record...");
+        Car car = new Car();
+        car.setPrice("£47.000,01 " + UUID.randomUUID());
 
         session.beginTransaction();
-        session.saveOrUpdate(mustang);
+        session.save(car);
         session.getTransaction().commit();
-    }
 
-    private void create(Session session) {
-        System.out.println("Creating car records...");
-        Car mustang = new Car();
-        mustang.setPrice("£20,000.00 " + UUID.randomUUID());
-
-        Car mondeo = new Car();
-        mondeo.setPrice("£26,000.00 " + UUID.randomUUID());
-
-        session.beginTransaction();
-        session.save(mustang);
-        session.save(mondeo);
-        session.getTransaction().commit();
+        read(session);
+        return car;
     }
 
     private void read(Session session) {
@@ -71,5 +61,21 @@ public class Runner {
         for (Car c : cars) {
             System.out.printf("%-30.30s  %-30.30s%n", c.getId(), c.getPrice());
         }
+    }
+
+    private void update(Session session, Car car) {
+        System.out.println("Updating car price...");
+        car.setPrice("£35,250.00"+ UUID.randomUUID());
+
+        session.beginTransaction();
+        session.saveOrUpdate(car);
+        session.getTransaction().commit();
+    }
+
+    private void delete(Session session, Car car) {
+        System.out.println("Deleting car record...");
+        session.beginTransaction();
+        session.delete(car);
+        session.getTransaction().commit();
     }
 }
